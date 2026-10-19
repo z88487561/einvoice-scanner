@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
-<meta name="description" content="掃描電子發票 QR Code，重製成電子發票證明聯的樣子，並可存成 JPG。完全在你的裝置上處理，不上傳任何資料。">
+<meta name="description" content="掃描電子發票 QR Code，重製成電子發票的樣子，並可存成 JPG。完全在你的裝置上處理，不上傳任何資料。">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="發票留存">
@@ -98,20 +98,21 @@
   <section id="viewHome" class="card">
     <button type="button" id="btnScan" class="btn primary">📷 開始掃描發票</button>
     <ul class="notes">
-      <li>對準電子發票證明聯下方的兩個 QR Code，一次只把一個放進框內：先掃左側，再掃右側（品項不多時只掃左側就夠）。</li>
-      <li>掃描後會重製成電子發票證明聯的樣子（格式一，寬 5.7 公分），可預覽並存成 JPG。</li>
+      <li>對準電子發票下方的兩個 QR Code，一次只把一個放進框內：先掃左側，再掃右側（品項不多時只掃左側就夠）。</li>
+      <li>掃描後會重製成電子發票的樣子，可預覽並存成 JPG。</li>
       <li>所有處理都在你的裝置上完成，不會上傳任何資料；需要允許相機權限。</li>
-      <li>只支援電子發票證明聯上的 QR Code。</li>
+      <li>只支援電子發票上的 QR Code。</li>
+      <li>不能代替電子發票證明聯正本！！</li>
     </ul>
   </section>
 
   <!-- 結果 -->
   <section id="viewResult" class="hidden" style="display:flex;flex-direction:column;gap:14px">
-    <!-- 圖片預覽移到最上方 -->
+    <!-- 1. 圖片預覽排在最上面 -->
     <div class="preview"><img id="resultImg" alt="重製的電子發票"></div>
     <p class="muted" style="margin:0;text-align:center">長按（或右鍵）圖片也可以直接儲存</p>
-
-    <!-- 操作按鈕與選項 -->
+    
+    <!-- 2. 操作按鈕與選項 -->
     <div class="card" style="display:flex;flex-direction:column;gap:12px">
       <label class="opt"><input type="checkbox" id="optDetails" checked> 附上交易明細</label>
       <button type="button" id="btnDownload" class="btn primary">⬇️ 下載 JPG</button>
@@ -121,7 +122,7 @@
       </div>
     </div>
 
-    <!-- 文字摘要與警告資訊移到下方 -->
+    <!-- 3. 文字摘要與警告資訊移到下方 -->
     <div class="card">
       <dl class="summary" id="summary"></dl>
     </div>
@@ -391,7 +392,7 @@ function invoicePeriod(year, month) {
   return { label: `${roc}年${pad(startMonth)}-${pad(startMonth + 1)}月`, code5: pad(roc, 3) + pad(startMonth + 1) };
 }
 
-// Code 39 的 9 個元素（bar／space 交錯，從 bar 開始）：n＝窄、w＝寬
+// Code 39 的 9 個元素（bar、space 交錯，從 bar 開始）：n＝窄、w＝寬
 const CODE39 = {
   '0': 'nnnwwnwnn', '1': 'wnnwnnnnw', '2': 'nnwwnnnnw', '3': 'wnwwnnnnn', '4': 'nnnwwnnnw',
   '5': 'wnnwwnnnn', '6': 'nnwwwnnnn', '7': 'nnnwnnwnw', '8': 'wnnwnnwnn', '9': 'nnwwnnwnn',
@@ -424,9 +425,9 @@ function qrMatrix(bytes) {
   return { n: qr.getModuleCount(), dark: (r, c) => qr.isDark(r, c) };
 }
 
-/* ---------- 繪製電子發票證明聯（格式一，寬 5.7 公分、證明聯區域高 9 公分） ----------
-   依「電子發票證明聯及銷貨退回、進貨退出或折讓證明單格式」：
-   由上而下為 電子發票證明聯、年期別、字軌號碼、交易日期、隨機碼／總計、賣方（買方）、一維條碼（Code 39）、左右並列兩個 QR；
+/* ---------- 繪製電子發票（格式一，寬 5.7 公分、區域高 9 公分） ----------
+   依「電子發票及銷貨退回、進貨退出或折讓證明單格式」：
+   由上而下為 電子發票、年期別、字軌號碼、交易日期、隨機碼／總計、賣方（買方）、一維條碼（Code 39）、左右並列兩個 QR；
    買受人為非營業人：交易明細另列一張；買受人為營業人（有買方統編）：明細接在 QR 下方、不裁切。 */
 const U = 200;   // 每公分的像素數（200 ≈ 508 dpi）。尺寸一律以公分計算再換算；太大的圖在舊款 iOS 會超過 canvas 面積上限
 const cm = v => Math.round(v * U);
@@ -508,19 +509,7 @@ function drawDetails(ctx, inv, x, y, draw) {
   return cy + cm(0.45) - y;
 }
 
-/** 依目前設定重畫並轉成 JPG（轉成 blob 後用 <img> 顯示，iOS 才能長按儲存） */
-async function buildImage() {
-  const canvas = document.createElement('canvas');
-  renderInvoice(canvas, current, { details: $('#optDetails').checked });
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
-  if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
-  if (resultUrl) URL.revokeObjectURL(resultUrl);
-  resultBlob = blob; resultUrl = URL.createObjectURL(blob);
-  $('#resultImg').src = resultUrl;
-  const file = new File([blob], fileName(), { type: 'image/jpeg' });
-  setHidden($('#btnShare'), !(navigator.canShare && navigator.canShare({ files: [file] })));
-}
-
+/** 在 canvas 上畫出整張發票。inv 需含：no、year、month、day、random、total、seller、buyer、items、left.bytes、right.bytes（可無） */
 function renderInvoice(canvas, inv, opts = {}) {
   const showDetails = opts.details !== false;
   const hasBuyer = !!inv.buyer && inv.buyer !== '00000000';
@@ -534,4 +523,333 @@ function renderInvoice(canvas, inv, opts = {}) {
   canvas.height = margin + slip1H + (slip2H ? gap + slip2H : 0) + footerH;
   ctx = canvas.getContext('2d');
 
-  //
+  // 背景與紙張
+  ctx.fillStyle = '#e5e7eb'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const paper = (y, h) => {
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.28)'; ctx.shadowBlur = cm(0.25); ctx.shadowOffsetY = cm(0.05);
+    ctx.fillStyle = '#fff'; ctx.fillRect(margin, y, slipW, h); ctx.restore();
+  };
+  paper(margin, slip1H);
+  if (slip2H) paper(margin + slip1H + gap, slip2H);
+
+  // ----  ----
+  const x0 = margin, y0 = margin, padX = cm(0.35), cx = x0 + slipW / 2;
+  const period = invoicePeriod(inv.year, inv.month);
+  const dateText = `${inv.year}-${pad(inv.month)}-${pad(inv.day)}`;
+  ctx.fillStyle = '#111'; ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+  const noText = inv.no.slice(0, 2) + '-' + inv.no.slice(2), innerW = slipW - padX * 2;
+  ctx.font = font(fitSize(ctx, ['電子發票'], innerW, 0.62, 0.5, true), true); ctx.fillText('電子發票', cx, y0 + cm(1.15));
+  // 年期別與字軌號碼用同一字級（法規要求 0.5 公分以上的粗體），寬度不夠時一起縮小
+  ctx.font = font(fitSize(ctx, [period.label, noText], innerW, 1.0, 0.5, true), true);
+  ctx.fillText(period.label, cx, y0 + cm(2.35));
+  ctx.fillText(noText, cx, y0 + cm(3.55));
+  ctx.textAlign = 'left'; ctx.font = font(0.34, false);
+  ctx.fillText(dateText, x0 + padX, y0 + cm(4.3));
+  ctx.fillText('隨機碼 ' + inv.random, x0 + padX, y0 + cm(4.85));
+  ctx.fillText('總計 ' + fmtNum(inv.total), x0 + cm(2.9), y0 + cm(4.85));
+  ctx.fillText('賣方' + inv.seller, x0 + padX, y0 + cm(5.4));
+  if (hasBuyer) ctx.fillText('買方' + inv.buyer, x0 + cm(2.9), y0 + cm(5.4));
+
+  // 一維條碼：年期別 5 碼 + 字軌 10 碼 + 隨機碼 4 碼
+  const widths = code39Widths(period.code5 + inv.no + inv.random);
+  const modules = widths.reduce((a, b) => a + b, 0);
+  const modPx = Math.max(2, Math.min(Math.round((slipW - padX * 2) / modules), Math.floor((slipW - padX) / modules)));
+  let bx = Math.round(cx - (modules * modPx) / 2);
+  const by = y0 + cm(5.65), bh = cm(0.8);
+  ctx.fillStyle = '#000';
+  widths.forEach((w, i) => { if (i % 2 === 0) ctx.fillRect(bx, by, w * modPx, bh); bx += w * modPx; });
+
+  // 左右並列兩個 QR（含 2 個模組的留白）
+  const qrBox = cm(2.3), qy = y0 + cm(6.55);
+  const qrXs = [x0 + padX, x0 + slipW - padX - qrBox];
+  const drawQR = (bytes, bx0) => {
+    const { n, dark } = qrMatrix(bytes);
+    const ms = Math.max(2, Math.floor(qrBox / (n + 4)));
+    const off = Math.floor((qrBox - ms * n) / 2);
+    ctx.fillStyle = '#000';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (dark(r, c)) ctx.fillRect(bx0 + off + c * ms, qy + off + r * ms, ms, ms);
+  };
+  drawQR(inv.left.bytes, qrXs[0]);
+  if (inv.right) drawQR(inv.right.bytes, qrXs[1]);
+  else if (inv.incomplete) {   // 右側 QR 沒掃到、而且還有品項在右側：不假造內容，只標示未掃描
+    ctx.save(); ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 3; ctx.setLineDash([cm(0.12), cm(0.1)]);
+    ctx.strokeRect(qrXs[1] + cm(0.1), qy + cm(0.1), qrBox - cm(0.2), qrBox - cm(0.2)); ctx.restore();
+    ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.font = font(0.3, false);
+    ctx.fillText('右側 QR', qrXs[1] + qrBox / 2, qy + qrBox / 2 - cm(0.05)); ctx.fillText('未掃描', qrXs[1] + qrBox / 2, qy + qrBox / 2 + cm(0.35));
+  } else drawQR(Array.from(new TextEncoder().encode('**')), qrXs[1]);   // 沒有額外品項時，右側 QR 內容就是 **
+
+  // ---- 交易明細 ----
+  if (showDetails) {
+    const dy = merged ? margin + certH : margin + slip1H + gap;
+    if (merged) { ctx.fillStyle = '#d1d5db'; ctx.fillRect(margin + padX, dy - cm(0.02), slipW - padX * 2, 2); }
+    drawDetails(ctx, inv, margin, dy, true);
+  }
+
+  // ---- 頁尾說明（紙張外） ----
+  ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.font = font(0.27, false);
+  const note = ['依 QR Code 內容重製，僅供留存參考，', '非電子發票正本。', '年期別依開立日期推算；交易時間與課稅別', '未包含在 QR Code 內。'];
+  note.forEach((ln, i) => ctx.fillText(ln, canvas.width / 2, canvas.height - footerH + cm(0.45) + i * cm(0.4)));
+}
+
+/* ===================== 介面與掃描流程 ===================== */
+const $ = s => document.querySelector(s);
+const setHidden = (el, hide) => el.classList.toggle('hidden', hide);
+function logError(kind, err) { console.error('[' + kind + ']', err); }
+
+let toastTimer = 0;
+function showToast(msg, actionText, actionFn, ms) {
+  $('#toastMsg').textContent = msg;
+  const btn = $('#toastAction');
+  setHidden(btn, !actionText);
+  if (actionText) { btn.textContent = actionText; btn.onclick = () => { setHidden($('#toast'), true); actionFn(); }; }
+  setHidden($('#toast'), false);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => setHidden($('#toast'), true), ms || 3500);
+}
+
+/* ---------- 掃描狀態 ---------- */
+// session：每次開啟掃描視窗遞增，用來丟棄上一輪還在解碼中的過期結果
+const scanState = { stream: null, raf: 0, detector: null, canvas: null, left: null, right: null, leftAt: 0, busy: false, last: 0, torchOn: false, done: false, session: 0 };
+let scanAudio = null, jsQRLoading = null, jsQRRetryAt = 0;
+const setScanStatus = t => { $('#scanStatus').textContent = t; };
+
+// 高對比提示：黑底、綠色大標題＋白字說明，蓋在相機畫面下緣
+function showScanBanner(title, text) {
+  $('#scanBannerTitle').textContent = title;
+  $('#scanBannerText').textContent = text;
+  $('#scanBanner').style.display = 'block';
+}
+const hideScanBanner = () => { $('#scanBanner').style.display = 'none'; };
+
+const isGarbled = r => (r.rawText || '').includes('\uFFFD');
+// 同一個 QR 再讀到時，若舊的含亂碼而新的乾淨、或新的來自 jsQR 的精確 bytes，就換成新的
+const isBetter = (cur, r) => (isGarbled(cur) && !isGarbled(r)) || (!cur.exact && r.exact && !isGarbled(r));
+
+/** 處理一批掃描結果：記下左／右 QR，每讀到新的一個就震動（或提示音）並更新提示 */
+function handleScanCodes(codes) {
+  const preferredEnc = scanState.left ? scanState.left.enc : null;
+  let gotNew = false;
+  codes.forEach(c => {
+    const r = parseInvoiceQR(c, preferredEnc);
+    if (!r) return;
+    const cur = scanState[r.kind];
+    if (!cur) {
+      scanState[r.kind] = r; gotNew = true;
+      if (r.kind === 'left') scanState.leftAt = Date.now();
+    } else if (isBetter(cur, r) && (r.kind === 'right' || cur.no === r.no)) {
+      scanState[r.kind] = r;
+    }
+  });
+  if (gotNew) scanFeedback();
+  const l = scanState.left, r = scanState.right;
+  setHidden($('#scanSkip'), !(l && !r && needsRightQR(l)));
+  if (l && r) {
+    showScanBanner('✅ 兩個 QR 都讀到了', '正在產生發票…');
+    setScanStatus('讀取完成，正在產生…');
+  } else if (l && needsRightQR(l)) {
+    showScanBanner('✅ 左側 QR 已讀取', '這張發票還有品項在右側，請把框框移到右側 QR');
+    setScanStatus('請將框框對準「右側 QR Code」（或按「略過右側」）');
+  } else if (l) {
+    showScanBanner('✅ 左側 QR 已讀取', '可再掃右側 QR 補齊品項；不需要的話稍候會自動完成');
+    setScanStatus('已讀到發票！將右側 QR 移入框內可讀取更多品項…');
+  } else if (r) {
+    showScanBanner('✅ 右側 QR 已讀取', '請把框框移到「左側 QR」');
+    setScanStatus('已讀到右側品項，請將框框對準「左側 QR Code」');
+  }
+}
+
+/** 左側 QR 已讀到（右側視情況）：合併品項、關閉掃描視窗、產生發票 */
+function finishScan() {
+  const l = scanState.left;
+  if (scanState.done || !l) return;
+  scanState.done = true;
+  const r = scanState.right;
+  const items = l.items.slice();
+  if (r) items.push(...invoiceItems(r.fields, l.enc));
+  stopScanner();
+  $('#scanDlg').close();
+  showResult({ ...l, items, left: l, right: r, incomplete: !r && needsRightQR(l) })
+    .catch(e => { logError('render', e); showToast('產生發票圖片失敗，請再試一次'); });
+}
+
+function stopScanner() {
+  cancelAnimationFrame(scanState.raf);
+  if (scanState.stream) scanState.stream.getTracks().forEach(t => t.stop());
+  scanState.stream = null;
+  scanState.torchOn = false;
+  setHidden($('#scanCameraControls'), true);
+  setHidden($('#scanTorch'), true);
+  setHidden($('#scanZoomWrap'), true);
+  $('#scanTorch').setAttribute('aria-pressed', 'false');
+  $('#scanTorch').textContent = '開啟補光';
+  hideScanBanner();
+  $('#scanVideo').srcObject = null;
+}
+
+/** 掃描迴圈：約每 180ms 解碼一次。先把取景框範圍裁成約 480px 再交給 jsQR（運算量小、也避免兩顆 QR 互相干擾），
+    有 BarcodeDetector 時再另外辨識整個畫面。 */
+function scanLoop(ts) {
+  if (!scanState.stream) return;
+  scanState.raf = requestAnimationFrame(scanLoop);
+  const v = $('#scanVideo');
+  if (scanState.busy || ts - scanState.last < 180 || v.readyState < 2 || !v.videoWidth) return;
+  scanState.last = ts;
+  scanState.busy = true;
+  const session = scanState.session;
+
+  (async () => {
+    const crop = getVideoCropRect(v, $('#scanVideoWrap'), $('#scanBox'));
+    if (!crop || crop.w <= 0 || crop.h <= 0) return;
+
+    const cv = scanState.canvas || (scanState.canvas = document.createElement('canvas'));
+    const sc = Math.min(1, 480 / Math.max(crop.w, crop.h));
+    cv.width = Math.max(1, Math.round(crop.w * sc));
+    cv.height = Math.max(1, Math.round(crop.h * sc));
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(v, crop.x, crop.y, crop.w, crop.h, 0, 0, cv.width, cv.height);
+
+    const codes = [];
+    if (scanState.detector) {   // 原生偵測（整個畫面，可同時讀到左右兩個 QR）
+      try { (await scanState.detector.detect(v)).forEach(b => { if (b.rawValue) codes.push(b.rawValue); }); } catch (e) {}
+    }
+    const jsQR = window.jsQR || await loadJsQR().catch(() => null);   // jsQR 解取景框局部影像，並提供原始 bytes（重製 QR 需要）
+    if (jsQR) {
+      const img = ctx.getImageData(0, 0, cv.width, cv.height);
+      const r = jsQR(img.data, img.width, img.height, { inversionAttempts: 'attemptBoth' });
+      if (r) codes.push(r);
+    }
+
+    if (session !== scanState.session || scanState.done) return;   // 視窗已關閉或重新開啟，捨棄過期的結果
+    if (codes.length) {
+      handleScanCodes(codes);
+      const l = scanState.left;
+      // 左側讀到後：有右側就完成；沒有更多品項在右側的話，多等 1.2 秒就完成；還有品項在右側則等到使用者掃完或按「略過」
+      if (l && (scanState.right || (!needsRightQR(l) && Date.now() - scanState.leftAt > 1200))) finishScan();
+    }
+  })()
+    .catch(e => logError('scan', e))
+    .finally(() => { if (session === scanState.session) scanState.busy = false; });
+}
+
+async function openScanner() {
+  Object.assign(scanState, { left: null, right: null, leftAt: 0, busy: false, last: 0, torchOn: false, done: false, session: scanState.session + 1 });
+  setHidden($('#scanCameraControls'), true);
+  setHidden($('#scanTorch'), true);
+  setHidden($('#scanZoomWrap'), true);
+  setHidden($('#scanSkip'), true);
+  hideScanBanner();
+  prepareScanAudio();
+  setScanStatus('正在開啟相機…');
+  $('#scanDlg').showModal();
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('此環境無法使用相機（需要 HTTPS）'), { name: 'NoCamera' });
+    scanState.stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    if (!$('#scanDlg').open) { stopScanner(); return; }   // 等待相機授權期間使用者已關閉視窗
+    const v = $('#scanVideo');
+    v.srcObject = scanState.stream;
+    await v.play();
+    await configureScanCamera();
+    await prepareDecoder();
+    setScanStatus('請將框框只對準「左側 QR Code」（一次只掃一個）');
+    scanState.raf = requestAnimationFrame(scanLoop);
+  } catch (e) {
+    logError('scan', e);
+    stopScanner();
+    const msg = e && e.name === 'NotAllowedError' ? '沒有相機權限，請到瀏覽器設定允許存取相機'
+      : /jsQR/.test((e && e.message) || '') ? '辨識元件載入失敗，請確認網路連線後重試'
+      : '無法開啟相機（' + ((e && e.name) || '未知錯誤') + '），請確認瀏覽器支援與權限設定';
+    setScanStatus(msg);
+  }
+}
+
+/* ---------- 結果：預覽、下載、分享 ---------- */
+let current = null, resultBlob = null, resultUrl = '';
+const fileName = () => 'invoice_' + current.no + '.jpg';
+
+function fillSummary(inv) {
+  const rows = [
+    ['發票號碼', inv.no.slice(0, 2) + '-' + inv.no.slice(2)],
+    ['開立日期', `${inv.year}-${pad(inv.month)}-${pad(inv.day)}`],
+    ['總計', '$' + fmtNum(inv.total)],
+    ['賣方統編', inv.seller],
+    ['品項數', inv.items.length ? String(inv.items.length) : '（QR 內無品項）']
+  ];
+  if (inv.buyer && inv.buyer !== '00000000') rows.push(['買方統編', inv.buyer]);
+  $('#summary').replaceChildren(...rows.flatMap(([k, v]) => {
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = k; dd.textContent = v;
+    return [dt, dd];
+  }));
+  const warns = [];
+  if (inv.incomplete) warns.push('這張發票還有品項放在右側 QR，因為沒有掃描，交易明細不完整，右側 QR 也以虛線框標示。');
+  if (!inv.left.exact && inv.enc === '0') warns.push('這張發票的品名使用 Big5 編碼，重製的 QR 內容可能與原本略有不同。');
+  if (inv.buyer && inv.buyer !== '00000000') warns.push('這張發票有買方統編，依規定格式交易明細會接在下方。');
+  $('#warnList').replaceChildren(...warns.map(w => { const li = document.createElement('li'); li.textContent = w; return li; }));
+  setHidden($('#warnBox'), !warns.length);
+}
+
+/** 依目前設定重畫並轉成 JPG（轉成 blob 後用 <img> 顯示，iOS 才能長按儲存） */
+async function buildImage() {
+  const canvas = document.createElement('canvas');
+  renderInvoice(canvas, current, { details: $('#optDetails').checked });
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+  if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
+  if (resultUrl) URL.revokeObjectURL(resultUrl);
+  resultBlob = blob; resultUrl = URL.createObjectURL(blob);
+  $('#resultImg').src = resultUrl;
+  const file = new File([blob], fileName(), { type: 'image/jpeg' });
+  setHidden($('#btnShare'), !(navigator.canShare && navigator.canShare({ files: [file] })));
+}
+
+async function showResult(inv) {
+  current = inv;
+  fillSummary(inv);
+  await buildImage();
+  setHidden($('#viewHome'), true);
+  $('#viewResult').classList.remove('hidden');
+  window.scrollTo({ top: 0 });
+}
+
+function downloadJpg() {
+  if (!resultBlob) return;
+  const a = document.createElement('a');
+  a.href = resultUrl; a.download = fileName(); a.style.display = 'none';
+  document.body.append(a); a.click(); a.remove();
+  showToast('已下載 ' + fileName());
+}
+
+async function shareJpg() {
+  if (!resultBlob) return;
+  const file = new File([resultBlob], fileName(), { type: 'image/jpeg' });
+  try { await navigator.share({ files: [file], title: '電子發票 ' + current.no }); }
+  catch (e) { if (e && e.name !== 'AbortError') { logError('share', e); showToast('分享失敗，請改用「下載 JPG」'); } }
+}
+
+/* ---------- 啟動與接線 ---------- */
+$('#btnScan').onclick = openScanner;
+$('#btnNext').onclick = openScanner;
+$('#btnDownload').onclick = downloadJpg;
+$('#btnShare').onclick = shareJpg;
+$('#optDetails').onchange = () => buildImage().catch(e => { logError('render', e); showToast('重畫失敗'); });
+$('#scanClose').onclick = $('#scanCancel').onclick = () => $('#scanDlg').close();
+$('#scanDlg').addEventListener('close', stopScanner);
+$('#scanSkip').onclick = finishScan;
+$('#scanTorch').onclick = () => setScanTorch(!scanState.torchOn);
+$('#scanZoom').oninput = e => setScanZoom(e.target.value);
+
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  // 已有舊版 SW 接管時，新版 SW 接手代表有新版本；首次安裝不提示
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) showToast('有新版本可用', '立即更新', () => location.reload(), 60000);
+  });
+  navigator.serviceWorker.register('sw.js').catch(e => logError('sw', e));
+}
+
+</script>
+</body>
+</html>
