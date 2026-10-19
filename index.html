@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
-<meta name="description" content="掃描電子發票 QR Code，重製成電子發票的樣子，並可存成 JPG。完全在你的裝置上處理，不上傳任何資料。">
+<!-- 修改處 1：把 Meta Description 改為模擬畫面與個人記帳用途 -->
+<meta name="description" content="掃描電子發票 QR Code，顯示電子發票模擬畫面，僅供個人記帳與留存參考，不得作為證明使用！。完全在你的裝置上處理，不上傳任何資料。">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="發票留存">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<title>電子發票留存</title>
+<!-- 修改處 2：把網頁分頁標題改成發票模擬留存 -->
+<title>電子發票模擬留存</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -88,8 +90,11 @@
 <header>
   <img src="icons/icon-192.png" alt="">
   <div>
-    <h1>電子發票留存</h1>
-    <p>掃描發票 QR Code，重製成發票樣式存成 JPG</p>
+    <!-- 修改處 3：Header 主標題加上模擬留存 -->
+    <h1>電子發票模擬留存</h1>
+    <!-- 修改處 4：副標題說明 -->
+    <p>掃描發票 QR Code，顯示電子發票模擬畫面。</p>
+    <p>僅供個人記帳與留存參考，不得作為證明使用！</p>
   </div>
 </header>
 
@@ -99,17 +104,17 @@
     <button type="button" id="btnScan" class="btn primary">📷 開始掃描發票</button>
     <ul class="notes">
       <li>對準電子發票下方的兩個 QR Code，一次只把一個放進框內：先掃左側，再掃右側（品項不多時只掃左側就夠）。</li>
-      <li>掃描後會重製成電子發票的樣子，可預覽並存成 JPG。</li>
+      <li>掃描後會顯示電子發票模擬畫面，僅供個人記帳與留存參考，不得作為證明使用！可預覽並存成 JPG。</li>
       <li>所有處理都在你的裝置上完成，不會上傳任何資料；需要允許相機權限。</li>
       <li>只支援電子發票上的 QR Code。</li>
-      <li>不能代替電子發票證明聯正本！！</li>
+      <li>不能代替電子發票證明聯正本，不得作為證明使用！！</li>
     </ul>
   </section>
 
   <!-- 結果 -->
   <section id="viewResult" class="hidden" style="display:flex;flex-direction:column;gap:14px">
     <!-- 1. 圖片預覽排在最上面 -->
-    <div class="preview"><img id="resultImg" alt="重製的電子發票"></div>
+    <div class="preview"><img id="resultImg" alt="模擬的電子發票"></div>
     <p class="muted" style="margin:0;text-align:center">長按（或右鍵）圖片也可以直接儲存</p>
     
     <!-- 2. 操作按鈕與選項 -->
@@ -149,6 +154,9 @@
       <label id="scanZoomWrap" class="hidden">縮放<input type="range" id="scanZoom" aria-label="相機縮放"></label>
     </div>
     <div class="tip">💡 掃描很難成功的話，先掃左側 QR Code，再依指示掃右側 QR Code。把 QR 放大、光線充足、手穩住會更快。</div>
+<p class="muted" style="margin: 4px 0 0 0; text-align: center; font-size: 0.75rem;">
+  ※ 本工具僅提供發票內容解讀與模擬畫面顯示。
+</p>
     <p id="scanStatus" role="status"></p>
     <div class="btn-row">
       <button type="button" id="scanSkip" class="btn hidden">略過右側，直接產生</button>
@@ -416,7 +424,7 @@ function code39Widths(text) {
   return out;
 }
 
-/** 以原始 bytes 產生 QR（錯誤更正 L，版本自動），重製出來的 QR 掃描後內容與原本相同 */
+/** 以原始 bytes 產生 QR（錯誤更正 L，版本自動），模擬出來的 QR 掃描後內容與原本相同 */
 function qrMatrix(bytes) {
   qrcode.stringToBytes = s => Array.from(s, c => c.charCodeAt(0) & 255);
   const qr = qrcode(0, 'L');
@@ -470,6 +478,7 @@ function drawDetails(ctx, inv, x, y, draw) {
   const lineH = cm(0.44), size = 0.32;
   let cy = y + cm(0.35);
   ctx.textBaseline = 'alphabetic';
+  
   // 欄位標題
   cy += cm(0.32);
   if (draw) {
@@ -479,6 +488,17 @@ function drawDetails(ctx, inv, x, y, draw) {
     ctx.fillRect(left, cy + cm(0.12), innerW, Math.max(2, cm(0.02)));
   }
   cy += cm(0.12) + cm(0.1);
+
+  // 🔴 在明細第一行插入紅色提示文字：「模擬畫面僅供參考」
+  cy += cm(0.38);
+  if (draw) {
+    ctx.fillStyle = '#dc2626'; // 紅色
+    ctx.font = font(0.30, true);
+    ctx.textAlign = 'left';
+    ctx.fillText('模擬畫面僅供參考', left, cy);
+  }
+  cy += cm(0.12);
+
   ctx.font = font(size, false);
   if (!inv.items.length) {
     cy += cm(0.45);
@@ -532,36 +552,50 @@ function renderInvoice(canvas, inv, opts = {}) {
   paper(margin, slip1H);
   if (slip2H) paper(margin + slip1H + gap, slip2H);
 
-  // ----  ----
+  // ---- 發票內容與警語 ----
   const x0 = margin, y0 = margin, padX = cm(0.35), cx = x0 + slipW / 2;
   const period = invoicePeriod(inv.year, inv.month);
   const dateText = `${inv.year}-${pad(inv.month)}-${pad(inv.day)}`;
-  ctx.fillStyle = '#111'; ctx.textBaseline = 'alphabetic';
-  ctx.textAlign = 'center';
   const noText = inv.no.slice(0, 2) + '-' + inv.no.slice(2), innerW = slipW - padX * 2;
-  ctx.font = font(fitSize(ctx, ['電子發票'], innerW, 0.62, 0.5, true), true); ctx.fillText('電子發票', cx, y0 + cm(1.15));
-  // 年期別與字軌號碼用同一字級（法規要求 0.5 公分以上的粗體），寬度不夠時一起縮小
-  ctx.font = font(fitSize(ctx, [period.label, noText], innerW, 1.0, 0.5, true), true);
-  ctx.fillText(period.label, cx, y0 + cm(2.35));
-  ctx.fillText(noText, cx, y0 + cm(3.55));
-  ctx.textAlign = 'left'; ctx.font = font(0.34, false);
-  ctx.fillText(dateText, x0 + padX, y0 + cm(4.3));
-  ctx.fillText('隨機碼 ' + inv.random, x0 + padX, y0 + cm(4.85));
-  ctx.fillText('總計 ' + fmtNum(inv.total), x0 + cm(2.9), y0 + cm(4.85));
-  ctx.fillText('賣方' + inv.seller, x0 + padX, y0 + cm(5.4));
-  if (hasBuyer) ctx.fillText('買方' + inv.buyer, x0 + cm(2.9), y0 + cm(5.4));
 
-  // 一維條碼：年期別 5 碼 + 字軌 10 碼 + 隨機碼 4 碼
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'center';
+
+  // 1. 在最上方以紅字標示模擬警語
+  ctx.fillStyle = '#dc2626'; // 紅色
+  ctx.font = font(0.30, true);
+  ctx.fillText('模擬畫面僅供參考', cx, y0 + cm(0.55));
+
+  // 2. 電子發票主標題（向下微調位置）
+  ctx.fillStyle = '#111';
+  ctx.font = font(fitSize(ctx, ['模擬電子發票'], innerW, 0.62, 0.5, true), true); 
+  ctx.fillText('模擬電子發票', cx, y0 + cm(1.25));
+
+  // 3. 年期別與字軌號碼（整體往下推，避免擠壓）
+  ctx.font = font(fitSize(ctx, [period.label, noText], innerW, 1.0, 0.5, true), true);
+  ctx.fillText(period.label, cx, y0 + cm(2.45));
+  ctx.fillText(noText, cx, y0 + cm(3.65));
+
+  // 4. 日期、隨機碼、總計、賣方、買方
+  ctx.textAlign = 'left'; 
+  ctx.font = font(0.34, false);
+  ctx.fillText(dateText, x0 + padX, y0 + cm(4.4));
+  ctx.fillText('隨機碼 ' + inv.random, x0 + padX, y0 + cm(4.95));
+  ctx.fillText('總計 ' + fmtNum(inv.total), x0 + cm(2.9), y0 + cm(4.95));
+  ctx.fillText('賣方' + inv.seller, x0 + padX, y0 + cm(5.5));
+  if (hasBuyer) ctx.fillText('買方' + inv.buyer, x0 + cm(2.9), y0 + cm(5.5));
+
+  // 5. 一維條碼：年期別 5 碼 + 字軌 10 碼 + 隨機碼 4 碼
   const widths = code39Widths(period.code5 + inv.no + inv.random);
   const modules = widths.reduce((a, b) => a + b, 0);
   const modPx = Math.max(2, Math.min(Math.round((slipW - padX * 2) / modules), Math.floor((slipW - padX) / modules)));
   let bx = Math.round(cx - (modules * modPx) / 2);
-  const by = y0 + cm(5.65), bh = cm(0.8);
+  const by = y0 + cm(5.75), bh = cm(0.8);
   ctx.fillStyle = '#000';
   widths.forEach((w, i) => { if (i % 2 === 0) ctx.fillRect(bx, by, w * modPx, bh); bx += w * modPx; });
 
-  // 左右並列兩個 QR（含 2 個模組的留白）
-  const qrBox = cm(2.3), qy = y0 + cm(6.55);
+  // 6. 左右並列兩個 QR
+  const qrBox = cm(2.3), qy = y0 + cm(6.65);
   const qrXs = [x0 + padX, x0 + slipW - padX - qrBox];
   const drawQR = (bytes, bx0) => {
     const { n, dark } = qrMatrix(bytes);
@@ -572,12 +606,12 @@ function renderInvoice(canvas, inv, opts = {}) {
   };
   drawQR(inv.left.bytes, qrXs[0]);
   if (inv.right) drawQR(inv.right.bytes, qrXs[1]);
-  else if (inv.incomplete) {   // 右側 QR 沒掃到、而且還有品項在右側：不假造內容，只標示未掃描
+  else if (inv.incomplete) {
     ctx.save(); ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 3; ctx.setLineDash([cm(0.12), cm(0.1)]);
     ctx.strokeRect(qrXs[1] + cm(0.1), qy + cm(0.1), qrBox - cm(0.2), qrBox - cm(0.2)); ctx.restore();
     ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.font = font(0.3, false);
     ctx.fillText('右側 QR', qrXs[1] + qrBox / 2, qy + qrBox / 2 - cm(0.05)); ctx.fillText('未掃描', qrXs[1] + qrBox / 2, qy + qrBox / 2 + cm(0.35));
-  } else drawQR(Array.from(new TextEncoder().encode('**')), qrXs[1]);   // 沒有額外品項時，右側 QR 內容就是 **
+  } else drawQR(Array.from(new TextEncoder().encode('**')), qrXs[1]);
 
   // ---- 交易明細 ----
   if (showDetails) {
@@ -588,7 +622,7 @@ function renderInvoice(canvas, inv, opts = {}) {
 
   // ---- 頁尾說明（紙張外） ----
   ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center'; ctx.font = font(0.27, false);
-  const note = ['依 QR Code 內容重製，僅供留存參考，', '非電子發票正本。', '年期別依開立日期推算；交易時間與課稅別', '未包含在 QR Code 內。'];
+  const note = ['依 QR Code 內容模擬畫面，非電子發票。', '僅供個人記帳與留存參考，不得作為證明使用！', '年期別依開立日期推算；', '交易時間與課稅別未包含在 QR Code 內。'];
   note.forEach((ln, i) => ctx.fillText(ln, canvas.width / 2, canvas.height - footerH + cm(0.45) + i * cm(0.4)));
 }
 
@@ -645,8 +679,8 @@ function handleScanCodes(codes) {
   const l = scanState.left, r = scanState.right;
   setHidden($('#scanSkip'), !(l && !r && needsRightQR(l)));
   if (l && r) {
-    showScanBanner('✅ 兩個 QR 都讀到了', '正在產生發票…');
-    setScanStatus('讀取完成，正在產生…');
+    showScanBanner('✅ 兩個 QR 都讀到了', '正在產生模擬畫面…');
+    setScanStatus('讀取完成，正在產生模擬畫面…');
   } else if (l && needsRightQR(l)) {
     showScanBanner('✅ 左側 QR 已讀取', '這張發票還有品項在右側，請把框框移到右側 QR');
     setScanStatus('請將框框對準「右側 QR Code」（或按「略過右側」）');
@@ -768,7 +802,7 @@ async function openScanner() {
 
 /* ---------- 結果：預覽、下載、分享 ---------- */
 let current = null, resultBlob = null, resultUrl = '';
-const fileName = () => 'invoice_' + current.no + '.jpg';
+const fileName = () => 'simulated_invoice_' + current.no + '.jpg';
 
 function fillSummary(inv) {
   const rows = [
@@ -784,9 +818,11 @@ function fillSummary(inv) {
     dt.textContent = k; dd.textContent = v;
     return [dt, dd];
   }));
-  const warns = [];
-  if (inv.incomplete) warns.push('這張發票還有品項放在右側 QR，因為沒有掃描，交易明細不完整，右側 QR 也以虛線框標示。');
-  if (!inv.left.exact && inv.enc === '0') warns.push('這張發票的品名使用 Big5 編碼，重製的 QR 內容可能與原本略有不同。');
+  const warns = [
+  '本畫面為依 QR Code 內容重製之模擬圖，僅供個人記帳與留存參考，不得作為報帳、扣抵或證明使用。'
+  ];
+  if (inv.incomplete) warns.push('還有品項放在右側 QR，因為沒有掃描，交易明細不完整，右側 QR 也以虛線框標示。');
+  if (!inv.left.exact && inv.enc === '0') warns.push('品名使用 Big5 編碼，重製的 QR 內容可能與原本略有不同。');
   if (inv.buyer && inv.buyer !== '00000000') warns.push('這張發票有買方統編，依規定格式交易明細會接在下方。');
   $('#warnList').replaceChildren(...warns.map(w => { const li = document.createElement('li'); li.textContent = w; return li; }));
   setHidden($('#warnBox'), !warns.length);
