@@ -589,7 +589,7 @@ function renderInvoice(canvas, inv, opts = {}) {
   const widths = code39Widths(period.code5 + inv.no + inv.random);
   const modules = widths.reduce((a, b) => a + b, 0);
   // 改進：嚴格限制條碼總寬度必須剛好等於發票內距寬度 (slipW - padX * 2)
-  const maxBarWidth = (slipW - padX * 2) * 1.44;
+  const maxBarWidth = (slipW - padX * 2) * 1.2;
   const modPx = Math.max(1, Math.floor(maxBarWidth / modules));
   const totalBarcodeWidth = modules * modPx;
   let bx = Math.round(cx - totalBarcodeWidth / 2);
