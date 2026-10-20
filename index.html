@@ -802,37 +802,28 @@ async function openScanner() {
 
 /* ---------- 結果：預覽、下載、分享 ---------- */
 let current = null, resultBlob = null, resultUrl = '';
-const fileName = () => 'simulated_invoice_' + current.no + '.jpg';
+const fileName = () => 'simulated_invoice_' + current.no + '.png'; // 副檔名改 .png
 
-function fillSummary(inv) {
-  const rows = [
-    ['發票號碼', inv.no.slice(0, 2) + '-' + inv.no.slice(2)],
-    ['開立日期', `${inv.year}-${pad(inv.month)}-${pad(inv.day)}`],
-    ['總計', '$' + fmtNum(inv.total)],
-    ['賣方統編', inv.seller],
-    ['品項數', inv.items.length ? String(inv.items.length) : '（QR 內無品項）']
-  ];
-  if (inv.buyer && inv.buyer !== '00000000') rows.push(['買方統編', inv.buyer]);
-  $('#summary').replaceChildren(...rows.flatMap(([k, v]) => {
-    const dt = document.createElement('dt'), dd = document.createElement('dd');
-    dt.textContent = k; dd.textContent = v;
-    return [dt, dd];
-  }));
-  const warns = [
-  '本畫面為依 QR Code 內容重製之模擬圖，僅供個人記帳與留存參考，不得作為報帳、扣抵或證明使用。'
-  ];
-  if (inv.incomplete) warns.push('還有品項放在右側 QR，因為沒有掃描，交易明細不完整，右側 QR 也以虛線框標示。');
-  if (!inv.left.exact && inv.enc === '0') warns.push('品名使用 Big5 編碼，重製的 QR 內容可能與原本略有不同。');
-  if (inv.buyer && inv.buyer !== '00000000') warns.push('這張發票有買方統編，依規定格式交易明細會接在下方。');
-  $('#warnList').replaceChildren(...warns.map(w => { const li = document.createElement('li'); li.textContent = w; return li; }));
-  setHidden($('#warnBox'), !warns.length);
+async function buildImage() {
+  const canvas = document.createElement('canvas');
+  renderInvoice(canvas, current, { details: $('#optDetails').checked });
+  
+  // 將格式改為 'image/png'（PNG 不需要品質參數，後面的 0.7 可以拿掉）
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+  
+  if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
+  if (resultUrl) URL.revokeObjectURL(resultUrl);
+  resultBlob = blob; resultUrl = URL.createObjectURL(blob);
+  $('#resultImg').src = resultUrl;
+  const file = new File([blob], fileName(), { type: 'image/png' }); // 類型改 image/png
+  setHidden($('#btnShare'), !(navigator.canShare && navigator.canShare({ files: [file] })));
 }
 
 /** 依目前設定重畫並轉成 JPG（轉成 blob 後用 <img> 顯示，iOS 才能長按儲存） */
 async function buildImage() {
   const canvas = document.createElement('canvas');
   renderInvoice(canvas, current, { details: $('#optDetails').checked });
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
   if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
   if (resultUrl) URL.revokeObjectURL(resultUrl);
   resultBlob = blob; resultUrl = URL.createObjectURL(blob);
