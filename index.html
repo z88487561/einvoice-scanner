@@ -437,7 +437,7 @@ function qrMatrix(bytes) {
    依「電子發票及銷貨退回、進貨退出或折讓證明單格式」：
    由上而下為 電子發票、年期別、字軌號碼、交易日期、隨機碼／總計、賣方（買方）、一維條碼（Code 39）、左右並列兩個 QR；
    買受人為非營業人：交易明細另列一張；買受人為營業人（有買方統編）：明細接在 QR 下方、不裁切。 */
-const U = 100;   // 每公分的像素數（100 ≈ 254 dpi，檔案輕量且清晰）。尺寸一律以公分計算再換算；太大的圖在舊款 iOS 會超過 canvas 面積上限
+const U = 120;   // 每公分的像素數（100 ≈ 254 dpi，檔案輕量且清晰）。尺寸一律以公分計算再換算；太大的圖在舊款 iOS 會超過 canvas 面積上限
 const cm = v => Math.round(v * U);
 const FONT_STACK = '"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC","Noto Sans CJK TC",sans-serif';
 const font = (sizeCm, bold) => `${bold ? '700 ' : ''}${cm(sizeCm)}px ${FONT_STACK}`;
@@ -589,7 +589,7 @@ function renderInvoice(canvas, inv, opts = {}) {
   const widths = code39Widths(period.code5 + inv.no + inv.random);
   const modules = widths.reduce((a, b) => a + b, 0);
   // 改進：嚴格限制條碼總寬度必須剛好等於發票內距寬度 (slipW - padX * 2)
-  const maxBarWidth = (slipW - padX * 2) * 1.2;
+  const maxBarWidth = (slipW - padX * 2) * 1;
   const modPx = Math.max(1, Math.floor(maxBarWidth / modules));
   const totalBarcodeWidth = modules * modPx;
   let bx = Math.round(cx - totalBarcodeWidth / 2);
