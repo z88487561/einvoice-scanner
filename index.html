@@ -832,7 +832,7 @@ function fillSummary(inv) {
 async function buildImage() {
   const canvas = document.createElement('canvas');
   renderInvoice(canvas, current, { details: $('#optDetails').checked });
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
   if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
   if (resultUrl) URL.revokeObjectURL(resultUrl);
   resultBlob = blob; resultUrl = URL.createObjectURL(blob);
