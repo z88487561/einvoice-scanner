@@ -585,14 +585,20 @@ function renderInvoice(canvas, inv, opts = {}) {
   ctx.fillText('賣方' + inv.seller, x0 + padX, y0 + cm(5.5));
   if (hasBuyer) ctx.fillText('買方' + inv.buyer, x0 + cm(2.9), y0 + cm(5.5));
 
-  // 5. 一維條碼：年期別 5 碼 + 字軌 10 碼 + 隨機碼 4 碼
+// 5. 一維條碼：年期別 5 碼 + 字軌 10 碼 + 隨機碼 4 碼
   const widths = code39Widths(period.code5 + inv.no + inv.random);
   const modules = widths.reduce((a, b) => a + b, 0);
-  const modPx = Math.max(2, Math.min(Math.round((slipW - padX * 2) / modules), Math.floor((slipW - padX) / modules)));
-  let bx = Math.round(cx - (modules * modPx) / 2);
+  // 改進：嚴格限制條碼總寬度必須剛好等於發票內距寬度 (slipW - padX * 2)
+  const maxBarWidth = slipW - padX * 2;
+  const modPx = Math.max(1, Math.floor(maxBarWidth / modules));
+  const totalBarcodeWidth = modules * modPx;
+  let bx = Math.round(cx - totalBarcodeWidth / 2);
   const by = y0 + cm(5.75), bh = cm(0.8);
   ctx.fillStyle = '#000';
-  widths.forEach((w, i) => { if (i % 2 === 0) ctx.fillRect(bx, by, w * modPx, bh); bx += w * modPx; });
+  widths.forEach((w, i) => { 
+    if (i % 2 === 0) ctx.fillRect(bx, by, w * modPx, bh); 
+    bx += w * modPx; 
+  });
 
   // 6. 左右並列兩個 QR
   const qrBox = cm(2.3), qy = y0 + cm(6.65);
@@ -832,7 +838,7 @@ function fillSummary(inv) {
 async function buildImage() {
   const canvas = document.createElement('canvas');
   renderInvoice(canvas, current, { details: $('#optDetails').checked });
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.75));
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
   if (!blob) throw new Error('toBlob 失敗（圖片可能太大）');
   if (resultUrl) URL.revokeObjectURL(resultUrl);
   resultBlob = blob; resultUrl = URL.createObjectURL(blob);
