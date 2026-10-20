@@ -101,7 +101,6 @@
 <main>
   <!-- 首頁 -->
   <section id="viewHome" class="card">
-    <button type="button" id="btnScan" class="btn primary">📷 開始掃描發票</button>
     <ul class="notes">
       <li>對準電子發票下方的兩個 QR Code，一次只把一個放進框內：先掃左側，再掃右側（品項不多時只掃左側就夠）。</li>
       <li>掃描後會顯示電子發票模擬畫面，僅供個人記帳與留存參考，不得作為證明使用！可預覽並存成 JPG。</li>
@@ -109,6 +108,7 @@
       <li>只支援電子發票上的 QR Code。</li>
       <li>不能代替電子發票證明聯正本，不得作為證明使用！！</li>
     </ul>
+    <button type="button" id="btnScan" class="btn primary">📷 開始掃描發票</button>
   </section>
 
   <!-- 結果 -->
@@ -437,7 +437,7 @@ function qrMatrix(bytes) {
    依「電子發票及銷貨退回、進貨退出或折讓證明單格式」：
    由上而下為 電子發票、年期別、字軌號碼、交易日期、隨機碼／總計、賣方（買方）、一維條碼（Code 39）、左右並列兩個 QR；
    買受人為非營業人：交易明細另列一張；買受人為營業人（有買方統編）：明細接在 QR 下方、不裁切。 */
-const U = 100;   // 每公分的像素數（200 ≈ 508 dpi）。尺寸一律以公分計算再換算；太大的圖在舊款 iOS 會超過 canvas 面積上限
+const U = 125;   // 每公分的像素數（200 ≈ 508 dpi）。尺寸一律以公分計算再換算；太大的圖在舊款 iOS 會超過 canvas 面積上限
 const cm = v => Math.round(v * U);
 const FONT_STACK = '"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC","Noto Sans CJK TC",sans-serif';
 const font = (sizeCm, bold) => `${bold ? '700 ' : ''}${cm(sizeCm)}px ${FONT_STACK}`;
