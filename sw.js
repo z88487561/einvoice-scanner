@@ -1,5 +1,5 @@
 // 改版時把版本號 +1，使用者下次開啟就會更新快取
-const CACHE = 'invoice-viewer-v1';
+const CACHE = 'invoice-viewer-v2';
 const ASSETS = ['./', 'index.html', 'jsQR.js', 'qrcode.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
